@@ -4,6 +4,39 @@ from time import sleep
 import re
 
 
+###################################
+########## Program usage ##########
+###################################
+
+
+def printHelp():
+    print("========== Help ==========")
+    print("=== Usage ===")
+    print("Add argument list:")
+    print("    <argument>=<value>")
+    print("=== Arguments ===")
+    print("    default: Run program with default settings.")
+    print("        Ommit \"=<value>\"")
+    print("    input: Specify input file from current working directory.")
+    print("        Default value: input.mp3")
+    print("    inputFilePath: Specify absolute location of input file.")
+    print("        Default value: <working directory> + <input>")
+    print("    outputPrefix: Pfefix of output files. Two-digit running number is added to parts.")
+    print("        Default value: output-")
+    print("    outputDirectoryName: Name of directory for output files. Directory will be created in current working directory.")
+    print("        Default value: output")
+    print("    outputDirectoryPath: Specify absolute path of directory for output files. No subdirectory will be created!")
+    print("        Default value: <working directory> + <outputDirectoryName>")
+    print("    partLength: Length of regular parts in seconds.")
+    print("        Default value: 600 (=10 minutes)")
+    print("    minPartLength: Minimal length of final part in seconds. If the final part would be shorter, it will be included in the part before.")
+    print("        Default value: 300 (= 5 minutes)")
+
+
+if len(sys.argv) == 1 or sys.argv[1] == "help":
+    printHelp()
+    sys.exit()
+
 ####################################
 ########## Audacity stuff ##########
 ####################################
@@ -58,9 +91,11 @@ def sendCommand(command):
 def readResponse():
     response = ''
     line = ''
-    while line != '\n' and len(response) == 0:
+    while True:
         response += line
         line = audacityResponder.readline()
+        if line == '\n' and len(response) > 0:
+            break
     return response
 
 
@@ -108,6 +143,25 @@ def sendCuttingCommands():
     global remainingLength
     global partNumber
 
+    print("=== Current settings ===")
+
+    print("Input file:")
+    print("    " + inputFilePath)
+
+    print("Output directory:")
+    print("    " + outputFolderPath)
+
+    print("Output prefix:")
+    print("    " + outputPrefix)
+
+    print("Regular part length:")
+    print("    " + str(partLength))
+
+    print("Minimal part length:")
+    print("    " + str(minPartLength))
+
+    print("=== Starting cutting process ===")
+
     # open
     executeCommand('OpenProject2: Filename="' + inputFilePath + '"')
 
@@ -131,19 +185,24 @@ def sendCuttingCommands():
             executeCommand('SelectTime: Start=' + str((partNumber-1)*partLength) + ' End=' + str((partNumber-1)*partLength+remainingLength))
             remainingLength = 0
 
-        executeCommand('Export2: Filename="' + outputFolderDir + outputPrefix + ("0" if partNumber < 10 else "") + str(partNumber) + '.mp3"')
+        executeCommand('Export2: Filename="' + outputFolderPath + outputPrefix + ("0" if partNumber < 10 else "") + str(partNumber) + '.mp3"')
         partNumber += 1
 
     # close on finish
     executeCommand('TrackClose:')
-    executeCommand('Close:')
+
+    print("=== Finished ===")
+    print("Enjoy your separated files")
 
 
 # === main program ===
 # parse arguments
-for arg in sys.argv:
+print("=== Parsing arguments ===")
+for arg in sys.argv[1:]:
     parts = arg.split("=")
     match parts[0]:
+        case "default":
+            pass
         case "input":
             inputFileName = parts[1]
             inputFilePath = inputFileDir + dirDelimiter + inputFileName
@@ -162,6 +221,7 @@ for arg in sys.argv:
             minPartLength = int(parts[1])
         case _:
             print("Error reading arguments: Argument unknown: " + parts[0])
+            printHelp()
             sys.exit()
 
 
