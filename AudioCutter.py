@@ -24,14 +24,17 @@ else:
     lineDelimiter = "\n"
     dirDelimiter = "/"
 
+print("=== Connecting to Audacity ... ===")
 
 if not os.path.exists(audacityCommandAcceptorPath):
+    print("Error connecting to Audacity: Pipe not found. Is Audacity running and scripting enabled?")
     sys.exit()
 
 # Apparent race condition in Audacity -> Sleep to ensure Audacity is available for next command
 sleep(.1)
 
 if not os.path.exists(audacityResponsePath):
+    print("Error connecting to Audacity: Pipe not found. Is Audacity running and scripting enabled?")
     sys.exit()
 
 # Apparent race condition in Audacity -> Sleep to ensure Audacity is available for next command
@@ -45,11 +48,6 @@ sleep(.1)
 audacityResponder = open(audacityResponsePath, 'rt')
 
 print("=== Connection to Audacity established ===")
-
-
-####################################
-########## Audacity stuff ##########
-####################################
 
 
 def sendCommand(command):
@@ -142,5 +140,30 @@ def sendCuttingCommands():
 
 
 # === main program ===
+# parse arguments
+for arg in sys.argv:
+    parts = arg.split("=")
+    match parts[0]:
+        case "input":
+            inputFileName = parts[1]
+            inputFilePath = inputFileDir + dirDelimiter + inputFileName
+        case "inputFilePath":
+            inputFilePath = parts[1]
+        case "outputPrefix":
+            outputPrefix = parts[1]
+        case "outputDirectoryName":
+            outputFolderName = parts[1]
+            outputFolderPath = outputFolderDir + dirDelimiter + outputFolderName + dirDelimiter
+        case "outputDirectoryPath":
+            outputFolderPath = parts[1]
+        case "partLength":
+            partLength = int(parts[1])
+        case "minPartLength":
+            minPartLength = int(parts[1])
+        case _:
+            print("Error reading arguments: Argument unknown: " + parts[0])
+            sys.exit()
+
+
 # run cutting code
 sendCuttingCommands()
